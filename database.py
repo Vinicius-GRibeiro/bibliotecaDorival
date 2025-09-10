@@ -7,20 +7,20 @@ import os
 
 def get_connection():
     try:
-        url = os.getenv("TURSO_DB_URL")
+        db_url = os.getenv("TURSO_DB_URL")
         auth_token = os.getenv("TURSO_AUTH_TOKEN")
 
-        if not url or not auth_token:
-            st.error("As credenciais do banco de dados (TURSO_DB_URL, TURSO_AUTH_TOKEN) não foram encontradas.")
-            st.warning("Verifique se o seu arquivo .env está na raiz do projeto e foi carregado corretamente.")
+        if not db_url or not auth_token:
+            st.error("As credenciais do banco de dados (TURSO_DB_URL, TURSO_AUTH_TOKEN) não foram encontradas no arquivo .env.")
             return None
 
-        if url.startswith("https://"):
-            url = url.replace("https://", "libsql://", 1)
+        if db_url.startswith("libsql://"):
+            db_url = "https://" + db_url[9:]
 
         client = libsql_client.create_client_sync(
-            url=url,
-            auth_token=auth_token
+            url=db_url,
+            auth_token=auth_token,
+            tls=True
         )
         return client
     except Exception as e:
@@ -32,10 +32,12 @@ def connect_and_init_db():
     connection = get_connection()
     if connection:
         init_db(connection)
+        print("Conexão e inicialização do DB bem-sucedidas.")
+    else:
+        print("Falha na conexão com o DB.")
     return connection
 
 def init_db(client):
-    """Inicializa as tabelas do banco de dados usando a conexão fornecida."""
     if not client: return
     client.batch([
         "CREATE TABLE IF NOT EXISTS livros (id INTEGER PRIMARY KEY, titulo TEXT NOT NULL, autor TEXT, isbn TEXT UNIQUE, localizacao TEXT NOT NULL, disponivel BOOLEAN DEFAULT TRUE)",
