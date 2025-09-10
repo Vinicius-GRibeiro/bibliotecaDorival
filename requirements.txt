@@ -2,3 +2,4 @@ streamlit
 requests
 pandas
 libsql-client
+python-dotenv
